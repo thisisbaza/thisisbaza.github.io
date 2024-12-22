@@ -141,12 +141,15 @@
             isParsing = true;
             elapsedTime = 0;
             startTimer();
+            console.log("Отправка команды: start_parsing"); // Лог для отладки
             Telegram.WebApp.sendData(JSON.stringify({ action: 'start_parsing' }));
             startBtn.style.display = 'none';
             stopBtn.style.display = 'inline-block';
             statsDisplay.innerHTML = '';
             logToConsole("Парсинг запущен...");
         });
+
+
 
         // Остановка парсинга
         stopBtn.addEventListener('click', () => {
