@@ -59,6 +59,14 @@
             consoleEl.scrollTop = consoleEl.scrollHeight;
         }
 
+        // Проверка объекта Telegram
+        if (typeof Telegram !== "undefined" && Telegram.WebApp) {
+            log("Telegram Web App SDK доступен.");
+            Telegram.WebApp.ready();
+        } else {
+            log("Telegram Web App SDK не доступен. Убедитесь, что вы открыли Web App через Telegram.");
+        }
+
         startBtn.addEventListener('click', () => {
             if (isParsing) return;
             isParsing = true;
@@ -86,8 +94,6 @@
             const parsedData = JSON.parse(data);
             log(`Получены данные: ${JSON.stringify(parsedData)}`);
         });
-
-        Telegram.WebApp.ready();
     </script>
 </body>
 </html>
