@@ -73,6 +73,7 @@
         .timer {
             font-size: 1.5rem;
             margin: 20px 0;
+            display: none; /* Скрыт по умолчанию */
             animation: fadeIn 1s ease-in-out;
         }
 
@@ -109,7 +110,7 @@
     <div class="container">
         <h1>Управление парсером</h1>
         <button id="startBtn" class="start">Запустить парсинг</button>
-        <button id="stopBtn" class="stop" disabled>Остановить парсинг</button>
+        <button id="stopBtn" class="stop" style="display: none;">Остановить парсинг</button>
         <div class="timer" id="timer">Время выполнения: 0 минут(ы) и 0 секунд(ы).</div>
         <div class="stats" id="stats"></div>
     </div>
@@ -131,8 +132,8 @@
             elapsedTime = 0;
             startTimer();
             Telegram.WebApp.sendData(JSON.stringify({ action: 'start_parsing' }));
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
             statsDisplay.innerHTML = '';
         });
 
@@ -142,12 +143,13 @@
             isParsing = false;
             stopTimer();
             Telegram.WebApp.sendData(JSON.stringify({ action: 'stop_parsing' }));
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
         });
 
         // Таймер
         function startTimer() {
+            timerDisplay.style.display = 'block';
             timerInterval = setInterval(() => {
                 elapsedTime++;
                 const minutes = Math.floor(elapsedTime / 60);
@@ -158,12 +160,32 @@
 
         function stopTimer() {
             clearInterval(timerInterval);
+            timerDisplay.style.display = 'none';
         }
 
-        // Получение статистики от бота
-        Telegram.WebApp.onEvent('web_app_data', (data) => {
+        // Получение состояния от бота при открытии
+        Telegram.WebApp.onEvent("web_app_open", () => {
+            Telegram.WebApp.sendData(JSON.stringify({ action: "get_status" }));
+        });
+
+        // Обработка состояния или статистики от бота
+        Telegram.WebApp.onEvent("web_app_data", (data) => {
             const parsedData = JSON.parse(data);
-            if (parsedData.action === 'stats') {
+            if (parsedData.action === "status") {
+                // Восстановление состояния
+                isParsing = parsedData.is_parsing;
+                elapsedTime = parsedData.elapsed_time;
+                if (isParsing) {
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-block';
+                    startTimer();
+                } else {
+                    startBtn.style.display = 'inline-block';
+                    stopBtn.style.display = 'none';
+                    stopTimer();
+                }
+            } else if (parsedData.action === "stats") {
+                // Отображение статистики
                 stopTimer();
                 statsDisplay.innerHTML = `
                     <h2>Результаты парсинга:</h2>
@@ -175,8 +197,8 @@
                     <p>Общее время: ${parsedData.elapsed_time}</p>
                 `;
                 isParsing = false;
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
             }
         });
 
