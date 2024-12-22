@@ -13,7 +13,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             height: 100vh;
             background: linear-gradient(135deg, #6e8efb, #a777e3); /* Градиентный фон */
             color: white;
@@ -77,11 +77,22 @@
             animation: fadeIn 1s ease-in-out;
         }
 
-        /* Статистика */
-        .stats {
-            margin-top: 20px;
-            text-align: left;
-            animation: slideIn 0.8s ease-out;
+        /* Консоль */
+        .console {
+            width: 100%;
+            height: 30%;
+            background-color: black;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .console p {
+            margin: 0;
+            line-height: 1.5;
         }
 
         /* Анимации */
@@ -90,17 +101,6 @@
                 opacity: 0;
             }
             to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
                 opacity: 1;
             }
         }
@@ -114,6 +114,7 @@
         <div class="timer" id="timer">Время выполнения: 0 минут(ы) и 0 секунд(ы).</div>
         <div class="stats" id="stats"></div>
     </div>
+    <div class="console" id="console"></div>
 
     <script>
         let isParsing = false;
@@ -124,6 +125,15 @@
         const stopBtn = document.getElementById('stopBtn');
         const timerDisplay = document.getElementById('timer');
         const statsDisplay = document.getElementById('stats');
+        const consoleDisplay = document.getElementById('console');
+
+        // Логирование в консоль
+        function logToConsole(message) {
+            const logLine = document.createElement('p');
+            logLine.textContent = message;
+            consoleDisplay.appendChild(logLine);
+            consoleDisplay.scrollTop = consoleDisplay.scrollHeight; // Прокрутка вниз
+        }
 
         // Запуск парсинга
         startBtn.addEventListener('click', () => {
@@ -135,6 +145,7 @@
             startBtn.style.display = 'none';
             stopBtn.style.display = 'inline-block';
             statsDisplay.innerHTML = '';
+            logToConsole("Парсинг запущен...");
         });
 
         // Остановка парсинга
@@ -145,6 +156,7 @@
             Telegram.WebApp.sendData(JSON.stringify({ action: 'stop_parsing' }));
             startBtn.style.display = 'inline-block';
             stopBtn.style.display = 'none';
+            logToConsole("Парсинг остановлен.");
         });
 
         // Таймер
@@ -166,6 +178,7 @@
         // Получение состояния от бота при открытии
         Telegram.WebApp.onEvent("web_app_open", () => {
             Telegram.WebApp.sendData(JSON.stringify({ action: "get_status" }));
+            logToConsole("Получение состояния...");
         });
 
         // Обработка состояния или статистики от бота
@@ -179,6 +192,7 @@
                     startBtn.style.display = 'none';
                     stopBtn.style.display = 'inline-block';
                     startTimer();
+                    logToConsole("Парсинг продолжается...");
                 } else {
                     startBtn.style.display = 'inline-block';
                     stopBtn.style.display = 'none';
@@ -194,16 +208,4 @@
                     <p>Остатки добавлены: ${parsedData.stocks_added}</p>
                     <p>Рейтинги добавлены: ${parsedData.ratings_added}</p>
                     <p>Отзывы добавлены: ${parsedData.reviews_added}</p>
-                    <p>Общее время: ${parsedData.elapsed_time}</p>
-                `;
-                isParsing = false;
-                startBtn.style.display = 'inline-block';
-                stopBtn.style.display = 'none';
-            }
-        });
-
-        // Инициализация Web App
-        Telegram.WebApp.ready();
-    </script>
-</body>
-</html>
+     
