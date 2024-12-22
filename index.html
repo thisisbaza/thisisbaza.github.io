@@ -1,230 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Парсер</title>
-    <style>
-        /* Общий стиль страницы */
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            height: 100vh;
-            background: linear-gradient(135deg, #6e8efb, #a777e3); /* Градиентный фон */
-            color: white;
-        }
+Telegram.WebApp.onEvent("web_app_open", () => {
+    logToConsole("Получение состояния...");
+    Telegram.WebApp.sendData(JSON.stringify({ action: "get_status" }));
+});
 
-        h1 {
-            margin: 20px 0;
-            font-size: 2rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
+Telegram.WebApp.onEvent("web_app_data", (data) => {
+    const parsedData = JSON.parse(data);
+    logToConsole(`Получены данные: ${JSON.stringify(parsedData)}`);
 
-        .container {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
-        }
-
-        /* Кнопки */
-        button {
-            padding: 15px 25px;
-            margin: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .start {
-            background: #4CAF50;
-            color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .start:hover {
-            background: #45a049;
-            transform: scale(1.05);
-        }
-
-        .stop {
-            background: #f44336;
-            color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .stop:hover {
-            background: #e53935;
-            transform: scale(1.05);
-        }
-
-        /* Таймер */
-        .timer {
-            font-size: 1.5rem;
-            margin: 20px 0;
-            display: none; /* Скрыт по умолчанию */
-            animation: fadeIn 1s ease-in-out;
-        }
-
-        /* Консоль */
-        .console {
-            width: 90%;
-            max-width: 400px;
-            height: 150px; /* Уменьшена высота */
-            background-color: #1e1e1e; /* Тёмно-серый фон */
-            color: #00ff00; /* Светло-зелёный текст */
-            font-family: 'Ubuntu Mono', monospace; /* Шрифт как в Ubuntu */
-            font-size: 12px;
-            overflow-y: auto;
-            padding: 10px;
-            box-sizing: border-box;
-            border-radius: 5px; /* Скруглённые углы */
-            border: 1px solid #555; /* Лёгкая рамка */
-        }
-
-        .console p {
-            margin: 0;
-            line-height: 1.5;
-        }
-
-        /* Анимации */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Управление парсером</h1>
-        <button id="startBtn" class="start">Запустить парсинг</button>
-        <button id="stopBtn" class="stop" style="display: none;">Остановить парсинг</button>
-        <div class="timer" id="timer">Время выполнения: 0 минут(ы) и 0 секунд(ы).</div>
-        <div class="stats" id="stats"></div>
-    </div>
-    <div class="console" id="console"></div>
-
-    <script>
-        let isParsing = false;
-        let timerInterval;
-        let elapsedTime = 0;
-
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const timerDisplay = document.getElementById('timer');
-        const statsDisplay = document.getElementById('stats');
-        const consoleDisplay = document.getElementById('console');
-
-        // Логирование в консоль
-        function logToConsole(message) {
-            const logLine = document.createElement('p');
-            logLine.textContent = message;
-            consoleDisplay.appendChild(logLine);
-            consoleDisplay.scrollTop = consoleDisplay.scrollHeight; // Прокрутка вниз
-        }
-
-        // Запуск парсинга
-        startBtn.addEventListener('click', () => {
-            if (isParsing) return;
-            isParsing = true;
-            elapsedTime = 0;
-            startTimer();
-            logToConsole("Отправка команды: start_parsing");
-            Telegram.WebApp.sendData(JSON.stringify({ action: 'start_parsing' }));
+    if (parsedData.action === "status") {
+        isParsing = parsedData.is_parsing;
+        elapsedTime = parsedData.elapsed_time;
+        if (isParsing) {
             startBtn.style.display = 'none';
             stopBtn.style.display = 'inline-block';
-            statsDisplay.innerHTML = '';
-            logToConsole("Парсинг запущен...");
-        });
-
-        // Остановка парсинга
-        stopBtn.addEventListener('click', () => {
-            if (!isParsing) return;
-            isParsing = false;
-            stopTimer();
-            logToConsole("Отправка команды: stop_parsing");
-            Telegram.WebApp.sendData(JSON.stringify({ action: 'stop_parsing' }));
+            startTimer();
+            logToConsole("Парсинг продолжается...");
+        } else {
             startBtn.style.display = 'inline-block';
             stopBtn.style.display = 'none';
-            logToConsole("Парсинг остановлен.");
-        });
-
-        // Таймер
-        function startTimer() {
-            timerDisplay.style.display = 'block';
-            timerInterval = setInterval(() => {
-                elapsedTime++;
-                const minutes = Math.floor(elapsedTime / 60);
-                const seconds = elapsedTime % 60;
-                timerDisplay.textContent = `Время выполнения: ${minutes} минут(ы) и ${seconds} секунд(ы).`;
-            }, 1000);
+            stopTimer();
         }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            timerDisplay.style.display = 'none';
-        }
-
-        // Получение состояния от бота при открытии
-        Telegram.WebApp.onEvent("web_app_open", () => {
-            logToConsole("Получение состояния...");
-            Telegram.WebApp.sendData(JSON.stringify({ action: "get_status" }));
-        });
-
-        // Обработка состояния или статистики от бота
-        Telegram.WebApp.onEvent("web_app_data", (data) => {
-            const parsedData = JSON.parse(data);
-            logToConsole(`Получены данные: ${JSON.stringify(parsedData)}`);
-            if (parsedData.action === "status") {
-                // Восстановление состояния
-                isParsing = parsedData.is_parsing;
-                elapsedTime = parsedData.elapsed_time;
-                if (isParsing) {
-                    startBtn.style.display = 'none';
-                    stopBtn.style.display = 'inline-block';
-                    startTimer();
-                    logToConsole("Парсинг продолжается...");
-                } else {
-                    startBtn.style.display = 'inline-block';
-                    stopBtn.style.display = 'none';
-                    stopTimer();
-                }
-            } else if (parsedData.action === "stats") {
-                // Отображение статистики
-                stopTimer();
-                statsDisplay.innerHTML = `
-                    <h2>Результаты парсинга:</h2>
-                    <p>Новые товары: ${parsedData.new_products}</p>
-                    <p>Цены добавлены: ${parsedData.prices_added}</p>
-                    <p>Остатки добавлены: ${parsedData.stocks_added}</p>
-                    <p>Рейтинги добавлены: ${parsedData.ratings_added}</p>
-                    <p>Отзывы добавлены: ${parsedData.reviews_added}</p>
-                    <p>Общее время: ${parsedData.elapsed_time}</p>
-                `;
-                isParsing = false;
-                startBtn.style.display = 'inline-block';
-                stopBtn.style.display = 'none';
-                logToConsole("Парсинг завершён.");
-            }
-        });
-
-        // Инициализация Web App
-        Telegram.WebApp.ready();
-    </script>
-</body>
-</html>
+    } else if (parsedData.action === "stats") {
+        stopTimer();
+        statsDisplay.innerHTML = `
+            <h2>Результаты парсинга:</h2>
+            <p>Новые товары: ${parsedData.new_products}</p>
+            <p>Цены добавлены: ${parsedData.prices_added}</p>
+            <p>Остатки добавлены: ${parsedData.stocks_added}</p>
+            <p>Рейтинги добавлены: ${parsedData.ratings_added}</p>
+            <p>Отзывы добавлены: ${parsedData.reviews_added}</p>
+            <p>Общее время: ${parsedData.elapsed_time}</p>
+        `;
+        isParsing = false;
+        startBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
+        logToConsole("Парсинг завершён.");
+    }
+});
