@@ -225,7 +225,13 @@
         });
 
         // Инициализация Web App
-        Telegram.WebApp.ready();
+        if (typeof Telegram !== "undefined" && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            console.log("Telegram WebApp инициализирован");
+        } else {
+            console.error("Telegram WebApp SDK недоступен. Убедитесь, что вы открываете Web App через Telegram.");
+            alert("Откройте это приложение через Telegram.");
+        }
     </script>
 </body>
 </html>
