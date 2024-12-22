@@ -192,7 +192,6 @@
             logToConsole(`Получены данные: ${JSON.stringify(parsedData)}`);
 
             if (parsedData.action === "status") {
-                // Восстановление состояния
                 isParsing = parsedData.is_parsing;
                 elapsedTime = parsedData.elapsed_time;
                 if (isParsing) {
@@ -225,13 +224,7 @@
         });
 
         // Инициализация Web App
-        if (typeof Telegram !== "undefined" && Telegram.WebApp) {
-            Telegram.WebApp.ready();
-            console.log("Telegram WebApp инициализирован");
-        } else {
-            console.error("Telegram WebApp SDK недоступен. Убедитесь, что вы открываете Web App через Telegram.");
-            alert("Откройте это приложение через Telegram.");
-        }
+        Telegram.WebApp.ready();
     </script>
 </body>
 </html>
